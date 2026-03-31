@@ -1,6 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 
+interface AppUser {
+  id: number;
+  username: string;
+  email: string;
+  display_name: string;
+  avatar_color: string;
+}
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 type Tab = "chats" | "contacts" | "profile" | "gallery" | "search" | "settings";
 
@@ -219,7 +227,7 @@ function ContactsTab() {
 }
 
 // ─── Profile Tab ──────────────────────────────────────────────────────────────
-function ProfileTab() {
+function ProfileTab({ user }: { user: AppUser }) {
   return (
     <div className="flex flex-col h-full overflow-y-auto">
       <div className="px-4 pt-4 pb-3">
@@ -227,15 +235,15 @@ function ProfileTab() {
       </div>
       <div className="flex flex-col items-center px-4 pb-6">
         <div className="relative mb-4">
-          <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-4xl font-bold text-white shadow-lg neon-glow-purple float-animation">
-            Я
+          <div className={`w-24 h-24 rounded-3xl bg-gradient-to-br ${user.avatar_color} flex items-center justify-center text-4xl font-bold text-white shadow-lg neon-glow-purple float-animation`}>
+            {user.display_name[0].toUpperCase()}
           </div>
           <button className="absolute -bottom-1 -right-1 w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg transition-transform hover:scale-110">
             <Icon name="Camera" size={14} className="text-white" />
           </button>
         </div>
-        <h3 className="text-xl font-bold text-white mb-1 font-golos">Иван Петров</h3>
-        <p className="text-sm text-white/50 mb-1">@ivan_petrov</p>
+        <h3 className="text-xl font-bold text-white mb-1 font-golos">{user.display_name}</h3>
+        <p className="text-sm text-white/50 mb-1">@{user.username}</p>
         <div className="encrypt-badge mb-5">
           <Icon name="ShieldCheck" size={11} />
           Аккаунт защищён
@@ -250,10 +258,8 @@ function ProfileTab() {
         </div>
         <div className="w-full space-y-2">
           {[
-            { icon: "Phone", label: "Телефон", val: "+7 999 123-45-67" },
-            { icon: "Mail", label: "Email", val: "ivan@example.com" },
-            { icon: "MapPin", label: "Город", val: "Москва" },
-            { icon: "Calendar", label: "Дата рождения", val: "15 марта 1992" },
+            { icon: "Mail", label: "Email", val: user.email },
+            { icon: "AtSign", label: "Имя пользователя", val: `@${user.username}` },
           ].map(item => (
             <div key={item.label} className="flex items-center gap-3 px-4 py-3 bg-white/4 border border-white/8 rounded-2xl">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 flex items-center justify-center flex-shrink-0">
@@ -380,7 +386,7 @@ function SearchTab() {
 }
 
 // ─── Settings Tab ─────────────────────────────────────────────────────────────
-function SettingsTab() {
+function SettingsTab({ onLogout }: { onLogout: () => void }) {
   const [encrypt, setEncrypt] = useState(true);
   const [notify, setNotify] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
@@ -447,14 +453,13 @@ function SettingsTab() {
         <div>
           <div className="bg-white/4 border border-white/8 rounded-2xl overflow-hidden divide-y divide-white/5">
             {[
-              { icon: "HelpCircle", label: "Помощь и поддержка", color: "from-teal-500 to-cyan-500" },
-              { icon: "Info", label: "О приложении NovaTalk", color: "from-gray-500 to-slate-500" },
-              { icon: "LogOut", label: "Выйти", color: "from-red-500 to-rose-500" },
+              { icon: "HelpCircle", label: "Помощь и поддержка", color: "from-teal-500 to-cyan-500", action: () => {} },
+              { icon: "Info", label: "О приложении NovaTalk", color: "from-gray-500 to-slate-500", action: () => {} },
+              { icon: "LogOut", label: "Выйти", color: "from-red-500 to-rose-500", action: onLogout },
             ].map(item => (
-              <button key={item.label} className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/5 transition-colors text-left">
+              <button key={item.label} onClick={item.action} className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/5 transition-colors text-left">
                 <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center opacity-80`}>
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                  <Icon name={item.icon as any} size={14} className="text-white" />
+                  <Icon name={item.icon} size={14} className="text-white" />
                 </div>
                 <span className={`text-sm font-medium ${item.label === "Выйти" ? "text-red-400" : "text-white/80"}`}>{item.label}</span>
                 <Icon name="ChevronRight" size={14} className="text-white/20 ml-auto" />
@@ -606,7 +611,7 @@ const NAV_ITEMS: { id: Tab; icon: string; label: string }[] = [
 ];
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
-export default function Index() {
+export default function Index({ user, onLogout }: { user: AppUser; onLogout: () => void }) {
   const [tab, setTab] = useState<Tab>("chats");
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
   const [showChat, setShowChat] = useState(false);
@@ -626,8 +631,8 @@ export default function Index() {
       case "contacts": return <ContactsTab />;
       case "gallery": return <GalleryTab />;
       case "search": return <SearchTab />;
-      case "profile": return <ProfileTab />;
-      case "settings": return <SettingsTab />;
+      case "profile": return <ProfileTab user={user} />;
+      case "settings": return <SettingsTab onLogout={onLogout} />;
     }
   };
 
@@ -669,9 +674,13 @@ export default function Index() {
         })}
 
         <div className="mt-auto">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm cursor-pointer transition-transform hover:scale-110">
-            Я
-          </div>
+          <button
+            onClick={() => setTab("profile")}
+            title={user.display_name}
+            className={`w-10 h-10 rounded-2xl bg-gradient-to-br ${user.avatar_color} flex items-center justify-center text-white font-bold text-sm cursor-pointer transition-transform hover:scale-110`}
+          >
+            {user.display_name[0].toUpperCase()}
+          </button>
         </div>
       </div>
 
